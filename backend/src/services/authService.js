@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const { INTERNAL_ROLES } = User;
+const Doctor = require("../models/Doctor");
 const generateToken = require("../utils/generateToken");
 
 class AppError extends Error {
@@ -37,7 +38,7 @@ async function login({ username, password, portal }) {
     return { token, user: user.toSafeObject() };
 }
 
-async function register({ name, username, email, password, role, phone }, creatorRole) {
+async function register({ name, username, email, password, role, phone, specialty }, creatorRole) {
     if (!name || !username || !email || !password || !role) {
         throw new AppError("Name, username, email, password and role are required", 400);
     }
@@ -54,6 +55,11 @@ async function register({ name, username, email, password, role, phone }, creato
     }
 
     const user = await User.create({ name, username, email, password, role, phone });
+
+    if (role === "doctor") {
+        await Doctor.create({ user: user._id, ...(specialty ? { specialty } : {}) });
+    }
+
     const token = generateToken(user);
     return { token, user: user.toSafeObject() };
 }

@@ -3,12 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getPortal } from "../../config/portals";
 import { updateProfileRequest } from "../../api/authApi";
+import { fetchMyAppointments } from "../../api/appointmentApi";
+import ThemeToggle from "../../components/ThemeToggle";
+import DoctorDirectory from "../../components/appointments/DoctorDirectory";
+import AppointmentList from "../../components/appointments/AppointmentList";
 import "./PatientDashboard.css";
 
-// Patient dashboard tabs: Profile, Overview, Sign Out
+// Patient dashboard tabs: Profile, Overview, Make an Appointment, Appointments, Theme, Sign Out
 const TABS = [
   { key: "profile", label: "Profile" },
   { key: "overview", label: "Overview" },
+  { key: "make-appointment", label: "Make an Appointment" },
+  { key: "appointments", label: "Appointments" },
+  { key: "theme", label: "Theme" },
   { key: "sign-out", label: "Sign Out" },
 ];
 
@@ -24,6 +31,19 @@ export default function PatientDashboard() {
   const [profileStatus, setProfileStatus] = useState({ error: "", success: "" });
   const [profileSubmitting, setProfileSubmitting] = useState(false);
 
+  const [appointments, setAppointments] = useState([]);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(false);
+  const [appointmentsError, setAppointmentsError] = useState("");
+
+  function loadAppointments() {
+    setAppointmentsLoading(true);
+    setAppointmentsError("");
+    fetchMyAppointments()
+      .then(setAppointments)
+      .catch(() => setAppointmentsError("Failed to load appointments."))
+      .finally(() => setAppointmentsLoading(false));
+  }
+
   function handleLogout() {
     logout();
     navigate("/", { replace: true });
@@ -33,6 +53,9 @@ export default function PatientDashboard() {
     if (tabKey === "sign-out") {
       handleLogout();
       return;
+    }
+    if (tabKey === "appointments") {
+      loadAppointments();
     }
     setActiveTab(tabKey);
   }
@@ -124,6 +147,21 @@ export default function PatientDashboard() {
               </button>
             </form>
           )}
+
+          {activeTab === "make-appointment" && <DoctorDirectory />}
+
+          {activeTab === "appointments" && (
+            <div className="dashboard-form">
+              <h2>My Appointments</h2>
+              {appointmentsLoading && <p>Loading…</p>}
+              {appointmentsError && <p className="dashboard-form__error">{appointmentsError}</p>}
+              {!appointmentsLoading && !appointmentsError && (
+                <AppointmentList appointments={appointments} viewerRole="patient" />
+              )}
+            </div>
+          )}
+
+          {activeTab === "theme" && <ThemeToggle />}
         </div>
 
         <nav className="dashboard__tabs" aria-label="Patient dashboard navigation">

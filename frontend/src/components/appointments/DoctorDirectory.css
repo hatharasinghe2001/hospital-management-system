@@ -1,0 +1,149 @@
+.doctor-directory {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left;
+}
+
+.doctor-directory__back {
+  align-self: flex-start;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--text);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.doctor-directory__back:hover {
+  color: var(--accent);
+}
+
+.doctor-directory__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+.doctor-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  padding: 20px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font: inherit;
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.doctor-card:hover {
+  border-color: var(--accent-border);
+  box-shadow: var(--shadow);
+}
+
+.doctor-card__avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+
+.doctor-card__avatar--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.doctor-card__name {
+  font-weight: 500;
+}
+
+.doctor-card__specialty {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.doctor-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 16px 0;
+}
+
+.doctor-detail__avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+
+.doctor-detail__avatar--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.doctor-detail__specialty {
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.appointment-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  max-width: 320px;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid var(--accent-border);
+  background: var(--accent-bg);
+  font: inherit;
+  cursor: pointer;
+}
+
+.appointment-bar:hover {
+  background: var(--accent);
+}
+
+.appointment-bar:hover * {
+  color: var(--bg);
+}
+
+.appointment-bar__label {
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 15px;
+}
+
+.appointment-bar__fee {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.appointment-bar__days,
+.appointment-bar__hours {
+  font-size: 13px;
+  color: var(--text);
+}

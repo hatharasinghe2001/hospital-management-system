@@ -1,14 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getPortal } from "../../config/portals";
 import { updateProfileRequest } from "../../api/authApi";
+import { fetchAllAppointments, confirmAppointment } from "../../api/appointmentApi";
+import ThemeToggle from "../../components/ThemeToggle";
+import AppointmentList from "../../components/appointments/AppointmentList";
 import "./ReceptionistDashboard.css";
 
-// Receptionist dashboard tabs: Profile, Overview, Sign Out
+// Receptionist dashboard tabs: Profile, Overview, Appointments, Theme, Sign Out
 const TABS = [
   { key: "profile", label: "Profile" },
   { key: "overview", label: "Overview" },
+  { key: "appointments", label: "Appointments" },
+  { key: "theme", label: "Theme" },
   { key: "sign-out", label: "Sign Out" },
 ];
 
@@ -24,6 +29,39 @@ export default function ReceptionistDashboard() {
   const [profileStatus, setProfileStatus] = useState({ error: "", success: "" });
   const [profileSubmitting, setProfileSubmitting] = useState(false);
 
+  const [appointments, setAppointments] = useState([]);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(true);
+  const [appointmentsError, setAppointmentsError] = useState("");
+  const [confirmingId, setConfirmingId] = useState(null);
+
+  const pendingCount = appointments.filter((a) => a.status === "pending").length;
+
+  function loadAppointments() {
+    setAppointmentsLoading(true);
+    setAppointmentsError("");
+    fetchAllAppointments()
+      .then(setAppointments)
+      .catch(() => setAppointmentsError("Failed to load appointments."))
+      .finally(() => setAppointmentsLoading(false));
+  }
+
+  // Load on mount so the pending count is visible on the tab as soon as the receptionist logs in.
+  useEffect(() => {
+    loadAppointments();
+  }, []);
+
+  async function handleConfirm(appointmentId) {
+    setConfirmingId(appointmentId);
+    try {
+      const updated = await confirmAppointment(appointmentId);
+      setAppointments((prev) => prev.map((a) => (a._id === updated._id ? updated : a)));
+    } catch {
+      setAppointmentsError("Failed to confirm appointment.");
+    } finally {
+      setConfirmingId(null);
+    }
+  }
+
   function handleLogout() {
     logout();
     navigate("/", { replace: true });
@@ -33,6 +71,9 @@ export default function ReceptionistDashboard() {
     if (tabKey === "sign-out") {
       handleLogout();
       return;
+    }
+    if (tabKey === "appointments") {
+      loadAppointments();
     }
     setActiveTab(tabKey);
   }
@@ -124,6 +165,24 @@ export default function ReceptionistDashboard() {
               </button>
             </form>
           )}
+
+          {activeTab === "appointments" && (
+            <div className="dashboard-form">
+              <h2>Appointments</h2>
+              {appointmentsLoading && <p>Loading…</p>}
+              {appointmentsError && <p className="dashboard-form__error">{appointmentsError}</p>}
+              {!appointmentsLoading && !appointmentsError && (
+                <AppointmentList
+                  appointments={appointments}
+                  viewerRole="receptionist"
+                  onConfirm={handleConfirm}
+                  confirmingId={confirmingId}
+                />
+              )}
+            </div>
+          )}
+
+          {activeTab === "theme" && <ThemeToggle />}
         </div>
 
         <nav className="dashboard__tabs" aria-label="Receptionist dashboard navigation">
@@ -146,6 +205,9 @@ export default function ReceptionistDashboard() {
               onClick={() => handleTabClick(tab.key)}
             >
               {tab.label}
+              {tab.key === "appointments" && pendingCount > 0 && (
+                <span className="dashboard__tab-badge">{pendingCount}</span>
+              )}
             </button>
           ))}
         </nav>

@@ -1,0 +1,120 @@
+.appointment-list {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+}
+
+.appointment-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.appointment-row__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.appointment-row__title,
+.appointment-row__subtitle {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.appointment-row__title {
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.appointment-row__subtitle {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.appointment-row__meta {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 2px;
+  font-size: 13px;
+  color: var(--text);
+  text-align: right;
+}
+
+.appointment-row__status {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.appointment-status {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.appointment-status--pending {
+  color: #b45309;
+  background: rgba(217, 119, 6, 0.15);
+}
+
+.appointment-status--confirmed {
+  color: #15803d;
+  background: rgba(21, 128, 61, 0.15);
+}
+
+.appointment-status--cancelled {
+  color: #b91c1c;
+  background: rgba(185, 28, 28, 0.15);
+}
+
+.appointment-row__number {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.appointment-row__confirm {
+  font: inherit;
+  font-size: 13.5px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--accent-border);
+  background: var(--accent);
+  color: var(--bg);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.appointment-row__confirm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 560px) {
+  .appointment-row {
+    flex-wrap: wrap;
+  }
+
+  .appointment-row__meta {
+    text-align: left;
+  }
+
+  .appointment-row__status {
+    align-items: flex-start;
+  }
+}

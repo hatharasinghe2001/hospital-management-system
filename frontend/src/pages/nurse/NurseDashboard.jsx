@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getPortal } from "../../config/portals";
 import { updateProfileRequest } from "../../api/authApi";
+import ThemeToggle from "../../components/ThemeToggle";
 import "./NurseDashboard.css";
 
-// Nurse dashboard tabs: Profile, Overview, Sign Out
+// Nurse dashboard tabs: Profile, Overview, Theme, Sign Out
 const TABS = [
   { key: "profile", label: "Profile" },
   { key: "overview", label: "Overview" },
+  { key: "theme", label: "Theme" },
   { key: "sign-out", label: "Sign Out" },
 ];
 
@@ -124,6 +126,8 @@ export default function NurseDashboard() {
               </button>
             </form>
           )}
+
+          {activeTab === "theme" && <ThemeToggle />}
         </div>
 
         <nav className="dashboard__tabs" aria-label="Nurse dashboard navigation">
