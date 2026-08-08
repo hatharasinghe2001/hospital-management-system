@@ -116,7 +116,8 @@
   color: var(--accent);
 }
 
-.dashboard__tab--active {
+.dashboard__tab--active,
+.dashboard__tab--active:hover {
   border-color: var(--accent-border);
   background: var(--accent);
   color: var(--bg);

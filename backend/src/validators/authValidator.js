@@ -13,6 +13,7 @@ const registerValidator = [
     body("email").trim().isEmail().withMessage("A valid email is required"),
     body("password").isLength({ min: 6 }).withMessage("Password must be at least 6 characters"),
     body("role").isIn(ROLES).withMessage(`Role must be one of: ${ROLES.join(", ")}`),
+    body("specialty").optional().trim().notEmpty().withMessage("Specialty cannot be empty"),
 ];
 
 const profileValidator = [

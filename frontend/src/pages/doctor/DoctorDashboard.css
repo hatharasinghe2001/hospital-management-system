@@ -116,7 +116,8 @@
   color: var(--accent);
 }
 
-.dashboard__tab--active {
+.dashboard__tab--active,
+.dashboard__tab--active:hover {
   border-color: var(--accent-border);
   background: var(--accent);
   color: var(--bg);
@@ -199,4 +200,39 @@
   color: var(--bg);
   font-size: 24px;
   font-weight: 600;
+}
+
+.dashboard-form__hint {
+  color: var(--text);
+  font-size: 13.5px;
+  margin: -8px 0 4px;
+}
+
+.schedule-days {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.schedule-days__label {
+  font-size: 14px;
+  color: var(--text-h);
+}
+
+.schedule-days__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.schedule-day-checkbox {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  cursor: pointer;
 }

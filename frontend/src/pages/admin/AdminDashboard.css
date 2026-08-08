@@ -116,7 +116,8 @@
   color: var(--accent);
 }
 
-.dashboard__tab--active {
+.dashboard__tab--active,
+.dashboard__tab--active:hover {
   border-color: var(--accent-border);
   background: var(--accent);
   color: var(--bg);
@@ -199,4 +200,71 @@
   color: var(--bg);
   font-size: 24px;
   font-weight: 600;
+}
+
+.users-panel {
+  width: 100%;
+  max-width: 640px;
+  text-align: left;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.users-table th,
+.users-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.users-table th {
+  color: var(--text);
+  font-weight: 500;
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.users-table td {
+  color: var(--text-h);
+}
+
+.role-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.role-badge--admin {
+  background: rgba(185, 28, 28, 0.12);
+  color: #b91c1c;
+}
+
+.role-badge--doctor {
+  background: rgba(21, 128, 61, 0.12);
+  color: #15803d;
+}
+
+.role-badge--receptionist {
+  background: rgba(29, 78, 216, 0.12);
+  color: #1d4ed8;
+}
+
+.role-badge--nurse {
+  background: rgba(217, 119, 6, 0.12);
+  color: #b45309;
+}
+
+.role-badge--patient {
+  background: var(--accent-bg);
+  color: var(--accent);
 }

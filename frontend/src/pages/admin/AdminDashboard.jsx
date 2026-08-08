@@ -3,19 +3,32 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getPortal } from "../../config/portals";
 import { createStaffRequest, updateProfileRequest } from "../../api/authApi";
+import { fetchUsers } from "../../api/userApi";
+import { SPECIALTIES } from "../../config/schedule";
+import ThemeToggle from "../../components/ThemeToggle";
 import "./AdminDashboard.css";
 
-// Admin dashboard tabs: Profile, Overview, Add User, Sign Out
+// Admin dashboard tabs: Profile, Overview, Add User, Users, Theme, Sign Out
 const TABS = [
   { key: "profile", label: "Profile" },
   { key: "overview", label: "Overview" },
   { key: "add-user", label: "Add User" },
+  { key: "users", label: "Users" },
+  { key: "theme", label: "Theme" },
   { key: "sign-out", label: "Sign Out" },
 ];
 
 const STAFF_ROLES = ["admin", "doctor", "receptionist", "nurse"];
 
-const EMPTY_STAFF_FORM = { name: "", username: "", email: "", password: "", phone: "", role: "doctor" };
+const EMPTY_STAFF_FORM = {
+  name: "",
+  username: "",
+  email: "",
+  password: "",
+  phone: "",
+  role: "doctor",
+  specialty: SPECIALTIES[0],
+};
 
 export default function AdminDashboard() {
   const { user, logout, updateUser } = useAuth();
@@ -33,6 +46,19 @@ export default function AdminDashboard() {
   const [profileStatus, setProfileStatus] = useState({ error: "", success: "" });
   const [profileSubmitting, setProfileSubmitting] = useState(false);
 
+  const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState("");
+
+  function loadUsers() {
+    setUsersLoading(true);
+    setUsersError("");
+    fetchUsers()
+      .then(setUsers)
+      .catch(() => setUsersError("Failed to load users."))
+      .finally(() => setUsersLoading(false));
+  }
+
   function handleLogout() {
     logout();
     navigate("/", { replace: true });
@@ -42,6 +68,9 @@ export default function AdminDashboard() {
     if (tabKey === "sign-out") {
       handleLogout();
       return;
+    }
+    if (tabKey === "users") {
+      loadUsers();
     }
     setActiveTab(tabKey);
   }
@@ -130,6 +159,19 @@ export default function AdminDashboard() {
                 </select>
               </label>
 
+              {staffForm.role === "doctor" && (
+                <label>
+                  Position
+                  <select name="specialty" value={staffForm.specialty} onChange={handleStaffFormChange}>
+                    {SPECIALTIES.map((specialty) => (
+                      <option key={specialty} value={specialty}>
+                        {specialty}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+
               <label>
                 Name
                 <input name="name" value={staffForm.name} onChange={handleStaffFormChange} required />
@@ -202,6 +244,40 @@ export default function AdminDashboard() {
               </button>
             </form>
           )}
+
+          {activeTab === "users" && (
+            <div className="users-panel">
+              <h2>Users</h2>
+              {usersLoading && <p>Loading…</p>}
+              {usersError && <p className="dashboard-form__error">{usersError}</p>}
+              {!usersLoading && !usersError && (
+                <table className="users-table">
+                  <thead>
+                    <tr>
+                      <th>Username</th>
+                      <th>Name</th>
+                      <th>Role</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((u) => (
+                      <tr key={u.id}>
+                        <td>{u.username}</td>
+                        <td>{u.name}</td>
+                        <td>
+                          <span className={`role-badge role-badge--${u.role}`}>{u.role}</span>
+                        </td>
+                        <td>{u.isActive ? "Active" : "Inactive"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+
+          {activeTab === "theme" && <ThemeToggle />}
         </div>
 
         <nav className="dashboard__tabs" aria-label="Admin dashboard navigation">
