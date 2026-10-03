@@ -20,6 +20,11 @@ export async function fetchAllAppointments() {
   return data.appointments;
 }
 
+export async function fetchAppointmentStats() {
+  const { data } = await axiosClient.get("/appointments/stats");
+  return data.stats;
+}
+
 export async function confirmAppointment(id) {
   const { data } = await axiosClient.patch(`/appointments/${id}/confirm`);
   return data.appointment;

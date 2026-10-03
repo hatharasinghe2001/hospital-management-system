@@ -13,11 +13,21 @@
 
 .portal-select__header {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .portal-select__header p {
   color: var(--text);
   font-size: 18px;
+}
+
+.hero-illustration {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  margin-bottom: 8px;
 }
 
 .portal-grid {

@@ -1,0 +1,88 @@
+.status-donut {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.status-donut__chart {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  flex-shrink: 0;
+}
+
+.status-donut__chart svg {
+  overflow: visible;
+}
+
+.status-donut__arc {
+  cursor: pointer;
+  transition: stroke-width 0.15s;
+  outline: none;
+}
+
+.status-donut__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.status-donut__center-value {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.status-donut__center-label {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.status-donut__legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.status-donut__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.status-donut__legend-item--active {
+  background: var(--code-bg);
+}
+
+.status-donut__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-donut__legend-label {
+  font-size: 14px;
+  color: var(--text-h);
+  min-width: 80px;
+}
+
+.status-donut__legend-count {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}

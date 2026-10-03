@@ -137,6 +137,136 @@
   color: var(--bg);
 }
 
+.dashboard-overview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  max-width: 720px;
+  margin-top: 12px;
+  text-align: left;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.stat-card--wide {
+  grid-column: span 2;
+}
+
+.stat-card__label {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.stat-card__value {
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+@media (max-width: 720px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stat-card--wide {
+    grid-column: span 2;
+  }
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 720px;
+  margin-top: 8px;
+  text-align: left;
+}
+
+.chart-card {
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.chart-card h2 {
+  font-size: 16px;
+  margin-bottom: 14px;
+}
+
+.chart-card--wide {
+  grid-column: span 2;
+}
+
+@media (max-width: 720px) {
+  .chart-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-card--wide {
+    grid-column: span 1;
+  }
+}
+
+.records-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 900px;
+  text-align: left;
+}
+
+.records-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.records-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--text-h);
+  max-width: 260px;
+  flex: 1 1 200px;
+}
+
+.records-filter select,
+.records-filter input {
+  font: inherit;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+}
+
+.records-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
 .dashboard-form {
   display: flex;
   flex-direction: column;

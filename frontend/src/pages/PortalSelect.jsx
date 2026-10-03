@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { PORTAL_GROUPS } from "../config/portals";
+import HeroIllustration from "../components/HeroIllustration";
 import "./PortalSelect.css";
 
 export default function PortalSelect() {
@@ -8,6 +9,7 @@ export default function PortalSelect() {
   return (
     <section className="portal-select">
       <div className="portal-select__header">
+        <HeroIllustration />
         <h1>Hospital Management System</h1>
         <p>Choose your portal to sign in</p>
       </div>
