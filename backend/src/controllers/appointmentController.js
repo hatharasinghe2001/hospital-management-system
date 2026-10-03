@@ -21,6 +21,11 @@ const getAllAppointments = asyncHandler(async (req, res) => {
     res.status(200).json({ success: true, appointments });
 });
 
+const getStats = asyncHandler(async (req, res) => {
+    const stats = await appointmentService.getStats();
+    res.status(200).json({ success: true, stats });
+});
+
 const confirmAppointment = asyncHandler(async (req, res) => {
     const appointment = await appointmentService.confirmAppointment(req.params.id, req.user.id);
     res.status(200).json({ success: true, appointment });
@@ -31,5 +36,6 @@ module.exports = {
     getMyAppointments,
     getDoctorAppointments,
     getAllAppointments,
+    getStats,
     confirmAppointment,
 };

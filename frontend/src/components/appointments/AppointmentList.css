@@ -7,6 +7,33 @@
   text-align: left;
 }
 
+.appointment-groups {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  text-align: left;
+}
+
+.appointment-group__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 16px;
+  color: var(--text-h);
+}
+
+.appointment-group__count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--code-bg);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+
 .appointment-row {
   display: flex;
   align-items: center;

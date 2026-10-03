@@ -28,6 +28,8 @@ async function createAppointment(patientId, { doctorId, day, time, reason }) {
         throw new AppError("Selected time is outside the doctor's availability", 400);
     }
 
+    const existingCount = await Appointment.countDocuments({ doctor: doctorId, day });
+
     const appointment = await Appointment.create({
         patient: patientId,
         doctor: doctorId,
@@ -36,6 +38,7 @@ async function createAppointment(patientId, { doctorId, day, time, reason }) {
         time,
         reason: reason || "",
         fee: profile.consultationFee,
+        appointmentNumber: existingCount + 1,
     });
 
     return populateFields(Appointment.findById(appointment._id));
@@ -53,6 +56,29 @@ async function getAllAppointments() {
     return populateFields(Appointment.find({}).sort({ status: 1, createdAt: -1 }));
 }
 
+async function getStats() {
+    const today = new Date().toLocaleDateString("en-US", { weekday: "long" });
+
+    const [patientCount, doctorCount, todayAppointments, pendingAppointments, revenueResult] = await Promise.all([
+        User.countDocuments({ role: "patient" }),
+        User.countDocuments({ role: "doctor", isActive: true }),
+        Appointment.countDocuments({ day: today }),
+        Appointment.countDocuments({ status: "pending" }),
+        Appointment.aggregate([
+            { $match: { status: "confirmed" } },
+            { $group: { _id: null, total: { $sum: "$fee" } } },
+        ]),
+    ]);
+
+    return {
+        patientCount,
+        doctorCount,
+        todayAppointments,
+        pendingAppointments,
+        revenue: revenueResult[0]?.total || 0,
+    };
+}
+
 async function confirmAppointment(appointmentId, receptionistId) {
     const appointment = await Appointment.findById(appointmentId);
     if (!appointment) {
@@ -62,14 +88,7 @@ async function confirmAppointment(appointmentId, receptionistId) {
         throw new AppError("Appointment is already confirmed", 409);
     }
 
-    const confirmedCount = await Appointment.countDocuments({
-        doctor: appointment.doctor,
-        day: appointment.day,
-        status: "confirmed",
-    });
-
     appointment.status = "confirmed";
-    appointment.appointmentNumber = confirmedCount + 1;
     appointment.confirmedBy = receptionistId;
     appointment.confirmedAt = new Date();
     await appointment.save();
@@ -82,5 +101,6 @@ module.exports = {
     getMyAppointments,
     getDoctorAppointments,
     getAllAppointments,
+    getStats,
     confirmAppointment,
 };

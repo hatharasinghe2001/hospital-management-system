@@ -3,16 +3,21 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getPortal } from "../../config/portals";
 import { updateProfileRequest } from "../../api/authApi";
-import { fetchAllAppointments, confirmAppointment } from "../../api/appointmentApi";
+import { fetchAllAppointments, fetchAppointmentStats, confirmAppointment } from "../../api/appointmentApi";
 import ThemeToggle from "../../components/ThemeToggle";
 import AppointmentList from "../../components/appointments/AppointmentList";
+import AppointmentTable from "../../components/appointments/AppointmentTable";
+import StatusDonutChart from "../../components/charts/StatusDonutChart";
+import DoctorBarChart, { groupAppointmentsByDoctor, groupRevenueByDoctor } from "../../components/charts/DoctorBarChart";
+import { groupAppointmentsByDoctor as groupByDoctor } from "../../utils/doctorGrouping";
 import "./ReceptionistDashboard.css";
 
-// Receptionist dashboard tabs: Profile, Overview, Appointments, Theme, Sign Out
+// Receptionist dashboard tabs: Profile, Overview, Appointments, Records, Theme, Sign Out
 const TABS = [
   { key: "profile", label: "Profile" },
   { key: "overview", label: "Overview" },
   { key: "appointments", label: "Appointments" },
+  { key: "records", label: "Records" },
   { key: "theme", label: "Theme" },
   { key: "sign-out", label: "Sign Out" },
 ];
@@ -34,7 +39,18 @@ export default function ReceptionistDashboard() {
   const [appointmentsError, setAppointmentsError] = useState("");
   const [confirmingId, setConfirmingId] = useState(null);
 
+  const [stats, setStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState("");
+
+  const [doctorFilter, setDoctorFilter] = useState("all");
+  const [nameSearch, setNameSearch] = useState("");
+
   const pendingCount = appointments.filter((a) => a.status === "pending").length;
+
+  const recordGroups = groupByDoctor(
+    appointments.filter((a) => a.patient?.name?.toLowerCase().includes(nameSearch.trim().toLowerCase()))
+  ).filter((group) => doctorFilter === "all" || group.doctorName === doctorFilter);
 
   function loadAppointments() {
     setAppointmentsLoading(true);
@@ -45,9 +61,19 @@ export default function ReceptionistDashboard() {
       .finally(() => setAppointmentsLoading(false));
   }
 
-  // Load on mount so the pending count is visible on the tab as soon as the receptionist logs in.
+  function loadStats() {
+    setStatsLoading(true);
+    setStatsError("");
+    fetchAppointmentStats()
+      .then(setStats)
+      .catch(() => setStatsError("Failed to load dashboard stats."))
+      .finally(() => setStatsLoading(false));
+  }
+
+  // Load on mount so the pending count/stats are visible as soon as the receptionist logs in.
   useEffect(() => {
     loadAppointments();
+    loadStats();
   }, []);
 
   async function handleConfirm(appointmentId) {
@@ -55,6 +81,7 @@ export default function ReceptionistDashboard() {
     try {
       const updated = await confirmAppointment(appointmentId);
       setAppointments((prev) => prev.map((a) => (a._id === updated._id ? updated : a)));
+      loadStats();
     } catch {
       setAppointmentsError("Failed to confirm appointment.");
     } finally {
@@ -72,7 +99,7 @@ export default function ReceptionistDashboard() {
       handleLogout();
       return;
     }
-    if (tabKey === "appointments") {
+    if (tabKey === "appointments" || tabKey === "records") {
       loadAppointments();
     }
     setActiveTab(tabKey);
@@ -121,10 +148,61 @@ export default function ReceptionistDashboard() {
       <div className="dashboard__layout">
         <div className="dashboard__body">
           {activeTab === "overview" && (
-            <>
+            <div className="dashboard-overview">
               <h1>Welcome, {user.name}</h1>
               <p>You are signed in as {portal.label} ({user.username}).</p>
-            </>
+
+              {statsLoading && <p>Loading dashboard…</p>}
+              {statsError && <p className="dashboard-form__error">{statsError}</p>}
+              {!statsLoading && !statsError && stats && (
+                <div className="stat-grid">
+                  <div className="stat-card">
+                    <span className="stat-card__label">Patients</span>
+                    <span className="stat-card__value">{stats.patientCount}</span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-card__label">Doctors</span>
+                    <span className="stat-card__value">{stats.doctorCount}</span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-card__label">Today's Appointments</span>
+                    <span className="stat-card__value">{stats.todayAppointments}</span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-card__label">Pending Appointments</span>
+                    <span className="stat-card__value">{stats.pendingAppointments}</span>
+                  </div>
+                  <div className="stat-card stat-card--wide">
+                    <span className="stat-card__label">Revenue (confirmed)</span>
+                    <span className="stat-card__value">${stats.revenue}</span>
+                  </div>
+                </div>
+              )}
+
+              {!appointmentsLoading && (
+                <div className="chart-grid">
+                  <div className="chart-card">
+                    <h2>Appointments by Status</h2>
+                    <StatusDonutChart appointments={appointments} />
+                  </div>
+                  <div className="chart-card">
+                    <h2>Appointments by Doctor</h2>
+                    <DoctorBarChart
+                      rows={groupAppointmentsByDoctor(appointments)}
+                      emptyMessage="No appointments yet."
+                    />
+                  </div>
+                  <div className="chart-card chart-card--wide">
+                    <h2>Revenue by Doctor</h2>
+                    <DoctorBarChart
+                      rows={groupRevenueByDoctor(appointments)}
+                      formatValue={(v) => `$${v}`}
+                      emptyMessage="No confirmed appointments yet."
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           {activeTab === "profile" && (
@@ -178,6 +256,53 @@ export default function ReceptionistDashboard() {
                   onConfirm={handleConfirm}
                   confirmingId={confirmingId}
                 />
+              )}
+            </div>
+          )}
+
+          {activeTab === "records" && (
+            <div className="records-panel">
+              <h2>Appointment Records</h2>
+
+              <div className="records-filters">
+                <label className="records-filter">
+                  Filter by doctor
+                  <select value={doctorFilter} onChange={(e) => setDoctorFilter(e.target.value)}>
+                    <option value="all">All Doctors</option>
+                    {groupByDoctor(appointments).map((group) => (
+                      <option key={group.doctorId} value={group.doctorName}>
+                        Dr. {group.doctorName}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="records-filter">
+                  Search by patient name
+                  <input
+                    type="text"
+                    placeholder="e.g. John"
+                    value={nameSearch}
+                    onChange={(e) => setNameSearch(e.target.value)}
+                  />
+                </label>
+              </div>
+
+              {appointmentsLoading && <p>Loading…</p>}
+              {appointmentsError && <p className="dashboard-form__error">{appointmentsError}</p>}
+              {!appointmentsLoading && !appointmentsError && (
+                <div className="records-groups">
+                  {recordGroups.length === 0 && <p>No matching appointments.</p>}
+                  {recordGroups.map((group) => (
+                    <div key={group.doctorId} className="records-group">
+                      <h3 className="appointment-group__title">
+                        Dr. {group.doctorName}
+                        <span className="appointment-group__count">{group.appointments.length}</span>
+                      </h3>
+                      <AppointmentTable appointments={group.appointments} />
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           )}
