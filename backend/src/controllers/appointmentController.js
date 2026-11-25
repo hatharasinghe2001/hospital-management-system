@@ -31,6 +31,11 @@ const confirmAppointment = asyncHandler(async (req, res) => {
     res.status(200).json({ success: true, appointment });
 });
 
+const cancelAppointment = asyncHandler(async (req, res) => {
+    const appointment = await appointmentService.cancelAppointment(req.params.id, req.user.id);
+    res.status(200).json({ success: true, appointment });
+});
+
 module.exports = {
     createAppointment,
     getMyAppointments,
@@ -38,4 +43,5 @@ module.exports = {
     getAllAppointments,
     getStats,
     confirmAppointment,
+    cancelAppointment,
 };

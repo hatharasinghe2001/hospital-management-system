@@ -11,12 +11,13 @@ export function groupAppointmentsByDoctor(appointments) {
     .sort((a, b) => b.value - a.value);
 }
 
-export function groupRevenueByDoctor(appointments) {
+// field: "fee" (doctor fee) or "hospitalCharge"
+export function groupRevenueByDoctor(appointments, field = "fee") {
   const revenue = new Map();
   for (const appt of appointments) {
     if (appt.status !== "confirmed") continue;
     const name = appt.doctor?.name || "Unassigned";
-    revenue.set(name, (revenue.get(name) || 0) + (appt.fee || 0));
+    revenue.set(name, (revenue.get(name) || 0) + (Number(appt[field]) || 0));
   }
   return [...revenue.entries()]
     .map(([name, value]) => ({ name, value }))

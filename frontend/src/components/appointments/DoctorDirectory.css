@@ -142,6 +142,12 @@
   color: var(--text-h);
 }
 
+.appointment-bar__fee-note {
+  font-weight: 400;
+  font-size: 12.5px;
+  color: var(--text);
+}
+
 .appointment-bar__days,
 .appointment-bar__hours {
   font-size: 13px;

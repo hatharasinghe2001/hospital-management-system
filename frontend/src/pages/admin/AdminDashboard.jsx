@@ -1,19 +1,27 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { getPortal } from "../../config/portals";
+import { getPortal, PORTALS } from "../../config/portals";
 import { createStaffRequest, updateProfileRequest } from "../../api/authApi";
 import { fetchUsers } from "../../api/userApi";
 import { SPECIALTIES } from "../../config/schedule";
 import ThemeToggle from "../../components/ThemeToggle";
+import FeedbackPanel from "../../components/feedback/FeedbackPanel";
+import HospitalChargeSettings from "../../components/settings/HospitalChargeSettings";
+import MessagesPanel from "../../components/messages/MessagesPanel";
+import useUnreadMessages from "../../components/messages/useUnreadMessages";
+import HamburgerIcon from "../../components/icons/HamburgerIcon";
 import "./AdminDashboard.css";
 
-// Admin dashboard tabs: Profile, Overview, Add User, Users, Theme, Sign Out
+// Admin dashboard tabs: Profile, Overview, Add User, Users, Charges, Messages, Feedback, Theme, Sign Out
 const TABS = [
   { key: "profile", label: "Profile" },
   { key: "overview", label: "Overview" },
   { key: "add-user", label: "Add User" },
   { key: "users", label: "Users" },
+  { key: "charges", label: "Charges" },
+  { key: "messages", label: "Messages" },
+  { key: "feedback", label: "Feedback" },
   { key: "theme", label: "Theme" },
   { key: "sign-out", label: "Sign Out" },
 ];
@@ -31,11 +39,13 @@ const EMPTY_STAFF_FORM = {
 };
 
 export default function AdminDashboard() {
+  const [unreadMessages, refreshUnreadMessages] = useUnreadMessages();
   const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   const portal = getPortal(user.role);
 
   const [activeTab, setActiveTab] = useState("overview");
+  const [tabsOpen, setTabsOpen] = useState(true);
 
   const [staffForm, setStaffForm] = useState(EMPTY_STAFF_FORM);
   const [staffStatus, setStaffStatus] = useState({ error: "", success: "" });
@@ -49,6 +59,9 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+
+  const filteredUsers = roleFilter === "all" ? users : users.filter((u) => u.role === roleFilter);
 
   function loadUsers() {
     setUsersLoading(true);
@@ -133,6 +146,15 @@ export default function AdminDashboard() {
         <div>
           <span aria-hidden="true">{portal.icon}</span> {portal.label} Dashboard
         </div>
+        <button
+          type="button"
+          className="dashboard__tabs-toggle"
+          onClick={() => setTabsOpen((open) => !open)}
+          aria-label={tabsOpen ? "Hide navigation tabs" : "Show navigation tabs"}
+          title={tabsOpen ? "Hide tabs" : "Show tabs"}
+        >
+          <HamburgerIcon />
+        </button>
       </header>
 
       <div className="dashboard__layout">
@@ -248,6 +270,21 @@ export default function AdminDashboard() {
           {activeTab === "users" && (
             <div className="users-panel">
               <h2>Users</h2>
+
+              <div className="users-filters">
+                <label className="users-filter">
+                  Filter by role
+                  <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
+                    <option value="all">All roles ({users.length})</option>
+                    {PORTALS.map((p) => (
+                      <option key={p.role} value={p.role}>
+                        {p.label} ({users.filter((u) => u.role === p.role).length})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
               {usersLoading && <p>Loading…</p>}
               {usersError && <p className="dashboard-form__error">{usersError}</p>}
               {!usersLoading && !usersError && (
@@ -261,7 +298,12 @@ export default function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {users.map((u) => (
+                    {filteredUsers.length === 0 && (
+                      <tr>
+                        <td colSpan={4}>No users with this role.</td>
+                      </tr>
+                    )}
+                    {filteredUsers.map((u) => (
                       <tr key={u.id}>
                         <td>{u.username}</td>
                         <td>{u.name}</td>
@@ -277,32 +319,44 @@ export default function AdminDashboard() {
             </div>
           )}
 
+          {activeTab === "charges" && <HospitalChargeSettings />}
+
+          {activeTab === "messages" && <MessagesPanel onRead={refreshUnreadMessages} />}
+
+          {activeTab === "feedback" && <FeedbackPanel />}
+
           {activeTab === "theme" && <ThemeToggle />}
         </div>
 
-        <nav className="dashboard__tabs" aria-label="Admin dashboard navigation">
-          <div className="dashboard__profile-summary">
-            {avatarPreview ? (
-              <img src={avatarPreview} alt="Profile" className="dashboard__profile-summary-img" />
-            ) : (
-              <div className="dashboard__profile-summary-placeholder" aria-hidden="true">
-                {user.name?.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <span className="dashboard__profile-summary-name">{user.name}</span>
-          </div>
+        {tabsOpen && (
+          <nav className="dashboard__tabs" aria-label="Admin dashboard navigation">
+            <div className="dashboard__profile-summary">
+              {avatarPreview ? (
+                <img src={avatarPreview} alt="Profile" className="dashboard__profile-summary-img" />
+              ) : (
+                <div className="dashboard__profile-summary-placeholder" aria-hidden="true">
+                  {user.name?.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <span className="dashboard__profile-summary-name">{user.name}</span>
+              <span className="dashboard__profile-summary-username">@{user.username}</span>
+            </div>
 
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              className={activeTab === tab.key ? "dashboard__tab dashboard__tab--active" : "dashboard__tab"}
-              onClick={() => handleTabClick(tab.key)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                className={activeTab === tab.key ? "dashboard__tab dashboard__tab--active" : "dashboard__tab"}
+                onClick={() => handleTabClick(tab.key)}
+              >
+                {tab.label}
+                {tab.key === "messages" && unreadMessages > 0 && (
+                  <span className="dashboard__tab-badge">{unreadMessages}</span>
+                )}
+              </button>
+            ))}
+          </nav>
+        )}
       </div>
     </section>
   );

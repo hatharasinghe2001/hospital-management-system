@@ -17,12 +17,25 @@
 .dashboard__header button {
   font: inherit;
   font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 8px 14px;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text-h);
   cursor: pointer;
+}
+
+.dashboard__header .dashboard__tabs-toggle {
+  padding: 8px;
+}
+
+.dashboard__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .dashboard__header button:hover {
@@ -96,6 +109,12 @@
   font-size: 13.5px;
   font-weight: 500;
   color: var(--text-h);
+  word-break: break-word;
+}
+
+.dashboard__profile-summary-username {
+  font-size: 12px;
+  color: var(--text);
   word-break: break-word;
 }
 
@@ -235,6 +254,24 @@
   text-align: left;
 }
 
+.records-subtitle {
+  color: var(--text);
+  font-size: 13.5px;
+  margin: 2px 0 16px;
+}
+
+.records-today-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
 .records-filters {
   display: flex;
   flex-wrap: wrap;
@@ -265,6 +302,10 @@
   display: flex;
   flex-direction: column;
   gap: 28px;
+}
+
+.records-date-group + .records-date-group {
+  margin-top: 16px;
 }
 
 .dashboard-form {

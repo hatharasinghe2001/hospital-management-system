@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { fetchDoctors } from "../../api/doctorApi";
 import { createAppointment } from "../../api/appointmentApi";
-import { generateTimeSlots } from "../../config/schedule";
+import { fetchHospitalCharge } from "../../api/settingsApi";
+import { formatMoney } from "../../utils/charges";
+import ChargeBreakdown from "./ChargeBreakdown";
+import { generateTimeSlots, getUpcomingDates, weekdayOf } from "../../config/schedule";
 import "./DoctorDirectory.css";
 
 function formatTimeRange(startTime, endTime) {
@@ -14,17 +17,31 @@ function formatDays(days) {
   return days.join(", ");
 }
 
+function todayInputValue() {
+  const d = new Date();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${month}-${day}`;
+}
+
 export default function DoctorDirectory({ onBooked }) {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [hospitalCharge, setHospitalCharge] = useState(0);
 
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [view, setView] = useState("list"); // list | detail | book
 
-  const [bookingForm, setBookingForm] = useState({ day: "", time: "", reason: "" });
+  const [bookingForm, setBookingForm] = useState({ date: "", time: "", reason: "" });
   const [bookingStatus, setBookingStatus] = useState({ error: "", success: "" });
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetchHospitalCharge()
+      .then(setHospitalCharge)
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetchDoctors()
@@ -40,7 +57,8 @@ export default function DoctorDirectory({ onBooked }) {
   }
 
   function openBooking() {
-    setBookingForm({ day: selectedDoctor.availableDays[0] || "", time: "", reason: "" });
+    const upcoming = getUpcomingDates(selectedDoctor.availableDays, 1);
+    setBookingForm({ date: upcoming[0]?.value || "", time: "", reason: "" });
     setView("book");
   }
 
@@ -66,7 +84,7 @@ export default function DoctorDirectory({ onBooked }) {
     try {
       await createAppointment({
         doctorId: selectedDoctor.id,
-        day: bookingForm.day,
+        date: bookingForm.date,
         time: bookingForm.time,
         reason: bookingForm.reason,
       });
@@ -137,7 +155,13 @@ export default function DoctorDirectory({ onBooked }) {
 
           <button type="button" className="appointment-bar" onClick={openBooking}>
             <span className="appointment-bar__label">Appointment</span>
-            <span className="appointment-bar__fee">${selectedDoctor.consultationFee}</span>
+            <span className="appointment-bar__fee">
+              {formatMoney((Number(selectedDoctor.consultationFee) || 0) + hospitalCharge)}
+              <span className="appointment-bar__fee-note">
+                {" "}
+                (doctor {formatMoney(selectedDoctor.consultationFee)} + hospital {formatMoney(hospitalCharge)})
+              </span>
+            </span>
             <span className="appointment-bar__days">{formatDays(selectedDoctor.availableDays)}</span>
             <span className="appointment-bar__hours">{formatTimeRange(selectedDoctor.startTime, selectedDoctor.endTime)}</span>
           </button>
@@ -148,6 +172,8 @@ export default function DoctorDirectory({ onBooked }) {
 
   if (view === "book" && selectedDoctor) {
     const timeSlots = generateTimeSlots(selectedDoctor.startTime, selectedDoctor.endTime);
+    const selectedWeekday = bookingForm.date ? weekdayOf(bookingForm.date) : "";
+    const dateUnavailable = Boolean(bookingForm.date) && !selectedDoctor.availableDays.includes(selectedWeekday);
 
     return (
       <div className="doctor-directory">
@@ -167,21 +193,30 @@ export default function DoctorDirectory({ onBooked }) {
           <form className="dashboard-form" onSubmit={handleBookingSubmit}>
             <h2>Book Appointment with {selectedDoctor.name}</h2>
             <p className="dashboard-form__hint">
-              ${selectedDoctor.consultationFee} · {formatDays(selectedDoctor.availableDays)} ·{" "}
+              {formatDays(selectedDoctor.availableDays)} ·{" "}
               {formatTimeRange(selectedDoctor.startTime, selectedDoctor.endTime)}
             </p>
 
+            <ChargeBreakdown doctorFee={selectedDoctor.consultationFee} hospitalCharge={hospitalCharge} />
+
             <label>
-              Day
-              <select name="day" value={bookingForm.day} onChange={handleBookingFieldChange} required>
-                {selectedDoctor.availableDays.length === 0 && <option value="">No days available</option>}
-                {selectedDoctor.availableDays.map((day) => (
-                  <option key={day} value={day}>
-                    {day}
-                  </option>
-                ))}
-              </select>
+              Date
+              <input
+                type="date"
+                name="date"
+                min={todayInputValue()}
+                value={bookingForm.date}
+                onChange={handleBookingFieldChange}
+                required
+              />
             </label>
+
+            {dateUnavailable && (
+              <p className="dashboard-form__error">
+                Dr. {selectedDoctor.name} doesn't see patients on {selectedWeekday}s. Available days:{" "}
+                {formatDays(selectedDoctor.availableDays)}.
+              </p>
+            )}
 
             <label>
               Time
@@ -210,7 +245,10 @@ export default function DoctorDirectory({ onBooked }) {
 
             {bookingStatus.error && <p className="dashboard-form__error">{bookingStatus.error}</p>}
 
-            <button type="submit" disabled={bookingSubmitting || timeSlots.length === 0}>
+            <button
+              type="submit"
+              disabled={bookingSubmitting || timeSlots.length === 0 || !bookingForm.date || dateUnavailable}
+            >
               {bookingSubmitting ? "Requesting..." : "Confirm Appointment"}
             </button>
           </form>

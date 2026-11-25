@@ -6,6 +6,7 @@ const {
     getAllAppointments,
     getStats,
     confirmAppointment,
+    cancelAppointment,
 } = require("../controllers/appointmentController");
 const protect = require("../middleware/authMiddleware");
 const restrictTo = require("../middleware/roleMiddleware");
@@ -20,5 +21,6 @@ router.get("/doctor-mine", protect, restrictTo("doctor"), getDoctorAppointments)
 router.get("/stats", protect, restrictTo("receptionist", "admin"), getStats);
 router.get("/", protect, restrictTo("receptionist", "admin"), getAllAppointments);
 router.patch("/:id/confirm", protect, restrictTo("receptionist", "admin"), confirmAppointment);
+router.patch("/:id/cancel", protect, restrictTo("patient"), cancelAppointment);
 
 module.exports = router;

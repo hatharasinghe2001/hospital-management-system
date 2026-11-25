@@ -3,18 +3,21 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getPortal } from "../../config/portals";
 import { updateProfileRequest } from "../../api/authApi";
-import { fetchMyAppointments } from "../../api/appointmentApi";
+import { fetchMyAppointments, cancelAppointment } from "../../api/appointmentApi";
 import ThemeToggle from "../../components/ThemeToggle";
 import DoctorDirectory from "../../components/appointments/DoctorDirectory";
 import AppointmentList from "../../components/appointments/AppointmentList";
+import FeedbackPanel from "../../components/feedback/FeedbackPanel";
+import HamburgerIcon from "../../components/icons/HamburgerIcon";
 import "./PatientDashboard.css";
 
-// Patient dashboard tabs: Profile, Overview, Make an Appointment, Appointments, Theme, Sign Out
+// Patient dashboard tabs: Profile, Overview, Make an Appointment, Appointments, Feedback, Theme, Sign Out
 const TABS = [
   { key: "profile", label: "Profile" },
   { key: "overview", label: "Overview" },
   { key: "make-appointment", label: "Make an Appointment" },
   { key: "appointments", label: "Appointments" },
+  { key: "feedback", label: "Feedback" },
   { key: "theme", label: "Theme" },
   { key: "sign-out", label: "Sign Out" },
 ];
@@ -25,6 +28,7 @@ export default function PatientDashboard() {
   const portal = getPortal(user.role);
 
   const [activeTab, setActiveTab] = useState("overview");
+  const [tabsOpen, setTabsOpen] = useState(true);
 
   const [profileForm, setProfileForm] = useState({ name: user.name, email: user.email });
   const [avatarPreview, setAvatarPreview] = useState(user.avatar || "");
@@ -34,6 +38,7 @@ export default function PatientDashboard() {
   const [appointments, setAppointments] = useState([]);
   const [appointmentsLoading, setAppointmentsLoading] = useState(false);
   const [appointmentsError, setAppointmentsError] = useState("");
+  const [cancelingId, setCancelingId] = useState(null);
 
   function loadAppointments() {
     setAppointmentsLoading(true);
@@ -42,6 +47,18 @@ export default function PatientDashboard() {
       .then(setAppointments)
       .catch(() => setAppointmentsError("Failed to load appointments."))
       .finally(() => setAppointmentsLoading(false));
+  }
+
+  async function handleCancel(appointmentId) {
+    setCancelingId(appointmentId);
+    try {
+      const updated = await cancelAppointment(appointmentId);
+      setAppointments((prev) => prev.map((a) => (a._id === updated._id ? updated : a)));
+    } catch (err) {
+      setAppointmentsError(err.response?.data?.message || "Failed to cancel appointment.");
+    } finally {
+      setCancelingId(null);
+    }
   }
 
   function handleLogout() {
@@ -98,6 +115,15 @@ export default function PatientDashboard() {
         <div>
           <span aria-hidden="true">{portal.icon}</span> {portal.label} Dashboard
         </div>
+        <button
+          type="button"
+          className="dashboard__tabs-toggle"
+          onClick={() => setTabsOpen((open) => !open)}
+          aria-label={tabsOpen ? "Hide navigation tabs" : "Show navigation tabs"}
+          title={tabsOpen ? "Hide tabs" : "Show tabs"}
+        >
+          <HamburgerIcon />
+        </button>
       </header>
 
       <div className="dashboard__layout">
@@ -156,37 +182,47 @@ export default function PatientDashboard() {
               {appointmentsLoading && <p>Loading…</p>}
               {appointmentsError && <p className="dashboard-form__error">{appointmentsError}</p>}
               {!appointmentsLoading && !appointmentsError && (
-                <AppointmentList appointments={appointments} viewerRole="patient" />
+                <AppointmentList
+                  appointments={appointments}
+                  viewerRole="patient"
+                  onCancel={handleCancel}
+                  cancelingId={cancelingId}
+                />
               )}
             </div>
           )}
 
+          {activeTab === "feedback" && <FeedbackPanel />}
+
           {activeTab === "theme" && <ThemeToggle />}
         </div>
 
-        <nav className="dashboard__tabs" aria-label="Patient dashboard navigation">
-          <div className="dashboard__profile-summary">
-            {avatarPreview ? (
-              <img src={avatarPreview} alt="Profile" className="dashboard__profile-summary-img" />
-            ) : (
-              <div className="dashboard__profile-summary-placeholder" aria-hidden="true">
-                {user.name?.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <span className="dashboard__profile-summary-name">{user.name}</span>
-          </div>
+        {tabsOpen && (
+          <nav className="dashboard__tabs" aria-label="Patient dashboard navigation">
+            <div className="dashboard__profile-summary">
+              {avatarPreview ? (
+                <img src={avatarPreview} alt="Profile" className="dashboard__profile-summary-img" />
+              ) : (
+                <div className="dashboard__profile-summary-placeholder" aria-hidden="true">
+                  {user.name?.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <span className="dashboard__profile-summary-name">{user.name}</span>
+              <span className="dashboard__profile-summary-username">@{user.username}</span>
+            </div>
 
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              className={activeTab === tab.key ? "dashboard__tab dashboard__tab--active" : "dashboard__tab"}
-              onClick={() => handleTabClick(tab.key)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                className={activeTab === tab.key ? "dashboard__tab dashboard__tab--active" : "dashboard__tab"}
+                onClick={() => handleTabClick(tab.key)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        )}
       </div>
     </section>
   );

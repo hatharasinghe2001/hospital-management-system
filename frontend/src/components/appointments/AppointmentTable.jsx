@@ -1,7 +1,9 @@
+import { formatDateLabel } from "../../config/schedule";
+import { appointmentCharges, formatMoney } from "../../utils/charges";
 import "./AppointmentList.css";
 import "./AppointmentTable.css";
 
-export default function AppointmentTable({ appointments }) {
+export default function AppointmentTable({ appointments, hideDate = false }) {
   if (appointments.length === 0) {
     return <p className="appointment-table__empty">No appointments for this doctor.</p>;
   }
@@ -14,26 +16,36 @@ export default function AppointmentTable({ appointments }) {
             <th>Patient</th>
             <th>Phone</th>
             <th>Appt #</th>
-            <th>Day</th>
+            {!hideDate && <th>Date</th>}
             <th>Time</th>
-            <th>Payment</th>
+            <th>Doctor Fee</th>
+            <th>Hospital Charge</th>
+            <th>Total</th>
             <th>Status</th>
           </tr>
         </thead>
         <tbody>
-          {appointments.map((appt) => (
+          {appointments.map((appt) => {
+            const charges = appointmentCharges(appt);
+            return (
             <tr key={appt._id}>
               <td>{appt.patient?.name}</td>
               <td>{appt.patient?.phone || "—"}</td>
               <td className="appointment-table__num">{appt.appointmentNumber ?? "—"}</td>
-              <td>{appt.day}</td>
+              {!hideDate && <td>{formatDateLabel(appt.date)}</td>}
               <td>{appt.time}</td>
-              <td className="appointment-table__num">${appt.fee}</td>
+              <td className="appointment-table__num">{formatMoney(charges.doctorFee)}</td>
+              <td className="appointment-table__num">{formatMoney(charges.hospitalCharge)}</td>
+              <td className="appointment-table__num appointment-table__total">{formatMoney(charges.total)}</td>
               <td>
                 <span className={`appointment-status appointment-status--${appt.status}`}>{appt.status}</span>
+                {appt.status === "cancelled" && appt.cancelledByRole && (
+                  <span className="appointment-row__cancelled-by"> by {appt.cancelledByRole}</span>
+                )}
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
