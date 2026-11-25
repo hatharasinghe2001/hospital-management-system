@@ -52,3 +52,16 @@
 .appointment-table__empty {
   color: var(--text);
 }
+
+.appointment-table__booked-by {
+  display: block;
+  font-size: 11.5px;
+  color: var(--text);
+}
+
+.appointment-table__address {
+  min-width: 140px;
+  max-width: 220px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

@@ -1,5 +1,6 @@
 import { formatDateLabel } from "../../config/schedule";
 import { appointmentCharges, formatMoney } from "../../utils/charges";
+import { patientDisplayName } from "../../utils/patientDetails";
 import "./AppointmentList.css";
 import "./AppointmentTable.css";
 
@@ -14,6 +15,8 @@ export default function AppointmentTable({ appointments, hideDate = false }) {
         <thead>
           <tr>
             <th>Patient</th>
+            <th>Age</th>
+            <th>Address</th>
             <th>Phone</th>
             <th>Appt #</th>
             {!hideDate && <th>Date</th>}
@@ -29,7 +32,14 @@ export default function AppointmentTable({ appointments, hideDate = false }) {
             const charges = appointmentCharges(appt);
             return (
             <tr key={appt._id}>
-              <td>{appt.patient?.name}</td>
+              <td>
+                {patientDisplayName(appt)}
+                {appt.patientName && appt.patient?.name && appt.patientName !== appt.patient.name && (
+                  <span className="appointment-table__booked-by">booked by {appt.patient.name}</span>
+                )}
+              </td>
+              <td className="appointment-table__num">{appt.patientAge ?? "—"}</td>
+              <td className="appointment-table__address">{appt.patientAddress || "—"}</td>
               <td>{appt.patient?.phone || "—"}</td>
               <td className="appointment-table__num">{appt.appointmentNumber ?? "—"}</td>
               {!hideDate && <td>{formatDateLabel(appt.date)}</td>}

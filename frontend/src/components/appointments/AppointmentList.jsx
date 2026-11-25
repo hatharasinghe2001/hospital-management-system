@@ -2,6 +2,7 @@ import { groupAppointmentsByDoctor, groupAppointmentsByDate } from "../../utils/
 import { formatDateLabel } from "../../config/schedule";
 import { appointmentCharges, formatMoney } from "../../utils/charges";
 import ChargeBreakdown from "./ChargeBreakdown";
+import { patientDisplayName } from "../../utils/patientDetails";
 import "./AppointmentList.css";
 
 function StatusBadge({ status }) {
@@ -14,10 +15,20 @@ function AppointmentRow({ appt, viewerRole, onConfirm, confirmingId, onCancel, c
     <div className="appointment-row">
       <div className="appointment-row__main">
         {viewerRole === "receptionist" && (
-          <span className="appointment-row__title">{appt.patient?.name}</span>
+          <span className="appointment-row__title">
+            {patientDisplayName(appt)}
+            {appt.patientAge != null && `, ${appt.patientAge}`}
+          </span>
         )}
         {viewerRole === "patient" && <span className="appointment-row__title">Dr. {appt.doctor?.name}</span>}
         <span className="appointment-row__subtitle">{appt.specialty}</span>
+        {viewerRole === "patient" && appt.patientName && (
+          <span className="appointment-row__subtitle">
+            Patient: {appt.patientName}
+            {appt.patientAge != null && ` (${appt.patientAge})`}
+          </span>
+        )}
+        {appt.patientAddress && <span className="appointment-row__subtitle">{appt.patientAddress}</span>}
       </div>
 
       <div className="appointment-row__meta">

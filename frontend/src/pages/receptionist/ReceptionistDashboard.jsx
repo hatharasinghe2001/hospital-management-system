@@ -88,7 +88,7 @@ export default function ReceptionistDashboard() {
   const recordGroups = groupByDoctor(
     periodAppointments.filter(
       (a) =>
-        a.patient?.name?.toLowerCase().includes(nameSearch.trim().toLowerCase()) &&
+        [a.patientName, a.patient?.name].some((n) => n?.toLowerCase().includes(nameSearch.trim().toLowerCase())) &&
         (!dateFilter || appointmentDateKey(a) === dateFilter)
     )
   ).filter((group) => doctorFilter === "all" || group.doctorName === doctorFilter);

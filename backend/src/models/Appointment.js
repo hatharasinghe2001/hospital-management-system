@@ -16,6 +16,21 @@ const appointmentSchema = new mongoose.Schema(
             type: String,
             trim: true,
         },
+        // Details of the person being seen, entered on the booking form
+        // (not required at schema level so appointments booked before this field existed stay valid)
+        patientName: {
+            type: String,
+            trim: true,
+        },
+        patientAge: {
+            type: Number,
+            min: 0,
+            max: 150,
+        },
+        patientAddress: {
+            type: String,
+            trim: true,
+        },
         date: {
             type: Date,
             required: true,
