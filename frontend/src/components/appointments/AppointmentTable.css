@@ -44,6 +44,11 @@
   font-variant-numeric: tabular-nums;
 }
 
+.appointment-table__total {
+  font-weight: 700;
+  color: var(--text-h);
+}
+
 .appointment-table__empty {
   color: var(--text);
 }

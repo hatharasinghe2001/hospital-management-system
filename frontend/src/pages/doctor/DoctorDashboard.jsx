@@ -6,13 +6,20 @@ import { updateProfileRequest } from "../../api/authApi";
 import { fetchMyDoctorProfile, updateMyDoctorProfile } from "../../api/doctorApi";
 import { DAYS, SPECIALTIES } from "../../config/schedule";
 import ThemeToggle from "../../components/ThemeToggle";
+import FeedbackPanel from "../../components/feedback/FeedbackPanel";
+import MessagesPanel from "../../components/messages/MessagesPanel";
+import useUnreadMessages from "../../components/messages/useUnreadMessages";
+import HamburgerIcon from "../../components/icons/HamburgerIcon";
+import NotificationBell from "../../components/notifications/NotificationBell";
 import "./DoctorDashboard.css";
 
-// Doctor dashboard tabs: Profile, Overview, Schedule, Theme, Sign Out
+// Doctor dashboard tabs: Profile, Overview, Schedule, Feedback, Theme, Sign Out
 const TABS = [
   { key: "profile", label: "Profile" },
   { key: "overview", label: "Overview" },
   { key: "schedule", label: "Schedule" },
+  { key: "messages", label: "Messages" },
+  { key: "feedback", label: "Feedback" },
   { key: "theme", label: "Theme" },
   { key: "sign-out", label: "Sign Out" },
 ];
@@ -26,11 +33,13 @@ const EMPTY_SCHEDULE = {
 };
 
 export default function DoctorDashboard() {
+  const [unreadMessages, refreshUnreadMessages] = useUnreadMessages();
   const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   const portal = getPortal(user.role);
 
   const [activeTab, setActiveTab] = useState("overview");
+  const [tabsOpen, setTabsOpen] = useState(true);
 
   const [profileForm, setProfileForm] = useState({ name: user.name, email: user.email });
   const [avatarPreview, setAvatarPreview] = useState(user.avatar || "");
@@ -138,6 +147,18 @@ export default function DoctorDashboard() {
       <header className="dashboard__header">
         <div>
           <span aria-hidden="true">{portal.icon}</span> {portal.label} Dashboard
+        </div>
+        <div className="dashboard__header-actions">
+          <NotificationBell />
+          <button
+            type="button"
+            className="dashboard__tabs-toggle"
+            onClick={() => setTabsOpen((open) => !open)}
+            aria-label={tabsOpen ? "Hide navigation tabs" : "Show navigation tabs"}
+            title={tabsOpen ? "Hide tabs" : "Show tabs"}
+          >
+            <HamburgerIcon />
+          </button>
         </div>
       </header>
 
@@ -254,32 +275,42 @@ export default function DoctorDashboard() {
             </form>
           )}
 
+          {activeTab === "messages" && <MessagesPanel onRead={refreshUnreadMessages} />}
+
+          {activeTab === "feedback" && <FeedbackPanel />}
+
           {activeTab === "theme" && <ThemeToggle />}
         </div>
 
-        <nav className="dashboard__tabs" aria-label="Doctor dashboard navigation">
-          <div className="dashboard__profile-summary">
-            {avatarPreview ? (
-              <img src={avatarPreview} alt="Profile" className="dashboard__profile-summary-img" />
-            ) : (
-              <div className="dashboard__profile-summary-placeholder" aria-hidden="true">
-                {user.name?.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <span className="dashboard__profile-summary-name">{user.name}</span>
-          </div>
+        {tabsOpen && (
+          <nav className="dashboard__tabs" aria-label="Doctor dashboard navigation">
+            <div className="dashboard__profile-summary">
+              {avatarPreview ? (
+                <img src={avatarPreview} alt="Profile" className="dashboard__profile-summary-img" />
+              ) : (
+                <div className="dashboard__profile-summary-placeholder" aria-hidden="true">
+                  {user.name?.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <span className="dashboard__profile-summary-name">{user.name}</span>
+              <span className="dashboard__profile-summary-username">@{user.username}</span>
+            </div>
 
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              className={activeTab === tab.key ? "dashboard__tab dashboard__tab--active" : "dashboard__tab"}
-              onClick={() => handleTabClick(tab.key)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                className={activeTab === tab.key ? "dashboard__tab dashboard__tab--active" : "dashboard__tab"}
+                onClick={() => handleTabClick(tab.key)}
+              >
+                {tab.label}
+                {tab.key === "messages" && unreadMessages > 0 && (
+                  <span className="dashboard__tab-badge">{unreadMessages}</span>
+                )}
+              </button>
+            ))}
+          </nav>
+        )}
       </div>
     </section>
   );

@@ -9,25 +9,51 @@ import AppointmentList from "../../components/appointments/AppointmentList";
 import AppointmentTable from "../../components/appointments/AppointmentTable";
 import StatusDonutChart from "../../components/charts/StatusDonutChart";
 import DoctorBarChart, { groupAppointmentsByDoctor, groupRevenueByDoctor } from "../../components/charts/DoctorBarChart";
-import { groupAppointmentsByDoctor as groupByDoctor } from "../../utils/doctorGrouping";
+import { groupAppointmentsByDoctor as groupByDoctor, groupAppointmentsByDate, appointmentDateKey } from "../../utils/doctorGrouping";
+import { formatDateLabel } from "../../config/schedule";
+import { formatMoney } from "../../utils/charges";
+import FeedbackPanel from "../../components/feedback/FeedbackPanel";
+import MessagesPanel from "../../components/messages/MessagesPanel";
+import useUnreadMessages from "../../components/messages/useUnreadMessages";
+import HamburgerIcon from "../../components/icons/HamburgerIcon";
+import NotificationBell from "../../components/notifications/NotificationBell";
 import "./ReceptionistDashboard.css";
 
-// Receptionist dashboard tabs: Profile, Overview, Appointments, Records, Theme, Sign Out
+// Receptionist dashboard tabs: Profile, Overview, Appointments, Upcoming Records, Past Records, Messages, Feedback, Theme, Sign Out
 const TABS = [
   { key: "profile", label: "Profile" },
   { key: "overview", label: "Overview" },
   { key: "appointments", label: "Appointments" },
-  { key: "records", label: "Records" },
+  { key: "upcoming-records", label: "Upcoming Records" },
+  { key: "past-records", label: "Past Records" },
+  { key: "messages", label: "Messages" },
+  { key: "feedback", label: "Feedback" },
   { key: "theme", label: "Theme" },
   { key: "sign-out", label: "Sign Out" },
 ];
 
+// Today's calendar date in the user's timezone, as YYYY-MM-DD (matches appointment date keys).
+function localDateKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function previousDateKey(dateKey) {
+  const d = new Date(`${dateKey}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
 export default function ReceptionistDashboard() {
+  const [unreadMessages, refreshUnreadMessages] = useUnreadMessages();
   const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   const portal = getPortal(user.role);
 
   const [activeTab, setActiveTab] = useState("overview");
+  const [tabsOpen, setTabsOpen] = useState(true);
 
   const [profileForm, setProfileForm] = useState({ name: user.name, email: user.email });
   const [avatarPreview, setAvatarPreview] = useState(user.avatar || "");
@@ -45,11 +71,26 @@ export default function ReceptionistDashboard() {
 
   const [doctorFilter, setDoctorFilter] = useState("all");
   const [nameSearch, setNameSearch] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
 
   const pendingCount = appointments.filter((a) => a.status === "pending").length;
 
+  // Records are split into two tabs: today + upcoming (incl. unscheduled), and past.
+  const isPastRecords = activeTab === "past-records";
+  const todayKey = localDateKey(new Date());
+  const isPastAppointment = (a) => {
+    const key = appointmentDateKey(a);
+    return key !== "unscheduled" && key < todayKey;
+  };
+
+  const periodAppointments = appointments.filter((a) => isPastAppointment(a) === isPastRecords);
+
   const recordGroups = groupByDoctor(
-    appointments.filter((a) => a.patient?.name?.toLowerCase().includes(nameSearch.trim().toLowerCase()))
+    periodAppointments.filter(
+      (a) =>
+        a.patient?.name?.toLowerCase().includes(nameSearch.trim().toLowerCase()) &&
+        (!dateFilter || appointmentDateKey(a) === dateFilter)
+    )
   ).filter((group) => doctorFilter === "all" || group.doctorName === doctorFilter);
 
   function loadAppointments() {
@@ -70,10 +111,18 @@ export default function ReceptionistDashboard() {
       .finally(() => setStatsLoading(false));
   }
 
-  // Load on mount so the pending count/stats are visible as soon as the receptionist logs in.
+  function refreshSilently() {
+    fetchAllAppointments().then(setAppointments).catch(() => {});
+    fetchAppointmentStats().then(setStats).catch(() => {});
+  }
+
+  // Load on mount so the pending count/stats are visible as soon as the receptionist logs in,
+  // then poll quietly so revenue/charts reflect cancellations etc. without a manual refresh.
   useEffect(() => {
     loadAppointments();
     loadStats();
+    const interval = setInterval(refreshSilently, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   async function handleConfirm(appointmentId) {
@@ -99,7 +148,10 @@ export default function ReceptionistDashboard() {
       handleLogout();
       return;
     }
-    if (tabKey === "appointments" || tabKey === "records") {
+    if (tabKey === "upcoming-records" || tabKey === "past-records") {
+      setDateFilter("");
+    }
+    if (tabKey === "appointments" || tabKey === "upcoming-records" || tabKey === "past-records") {
       loadAppointments();
     }
     setActiveTab(tabKey);
@@ -143,6 +195,18 @@ export default function ReceptionistDashboard() {
         <div>
           <span aria-hidden="true">{portal.icon}</span> {portal.label} Dashboard
         </div>
+        <div className="dashboard__header-actions">
+          <NotificationBell />
+          <button
+            type="button"
+            className="dashboard__tabs-toggle"
+            onClick={() => setTabsOpen((open) => !open)}
+            aria-label={tabsOpen ? "Hide navigation tabs" : "Show navigation tabs"}
+            title={tabsOpen ? "Hide tabs" : "Show tabs"}
+          >
+            <HamburgerIcon />
+          </button>
+        </div>
       </header>
 
       <div className="dashboard__layout">
@@ -172,9 +236,21 @@ export default function ReceptionistDashboard() {
                     <span className="stat-card__label">Pending Appointments</span>
                     <span className="stat-card__value">{stats.pendingAppointments}</span>
                   </div>
-                  <div className="stat-card stat-card--wide">
-                    <span className="stat-card__label">Revenue (confirmed)</span>
-                    <span className="stat-card__value">${stats.revenue}</span>
+                  <div className="stat-card">
+                    <span className="stat-card__label">Cancelled Appointments</span>
+                    <span className="stat-card__value">{stats.cancelledAppointments}</span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-card__label">Doctor Fee Revenue (confirmed)</span>
+                    <span className="stat-card__value">{formatMoney(stats.doctorFeeRevenue)}</span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-card__label">Hospital Charge Revenue (confirmed)</span>
+                    <span className="stat-card__value">{formatMoney(stats.hospitalChargeRevenue)}</span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-card__label">Total Revenue (confirmed)</span>
+                    <span className="stat-card__value">{formatMoney(stats.revenue)}</span>
                   </div>
                 </div>
               )}
@@ -193,10 +269,18 @@ export default function ReceptionistDashboard() {
                     />
                   </div>
                   <div className="chart-card chart-card--wide">
-                    <h2>Revenue by Doctor</h2>
+                    <h2>Doctor Fee Revenue by Doctor</h2>
                     <DoctorBarChart
-                      rows={groupRevenueByDoctor(appointments)}
-                      formatValue={(v) => `$${v}`}
+                      rows={groupRevenueByDoctor(appointments, "fee")}
+                      formatValue={formatMoney}
+                      emptyMessage="No confirmed appointments yet."
+                    />
+                  </div>
+                  <div className="chart-card chart-card--wide">
+                    <h2>Hospital Charge Revenue by Doctor</h2>
+                    <DoctorBarChart
+                      rows={groupRevenueByDoctor(appointments, "hospitalCharge")}
+                      formatValue={formatMoney}
                       emptyMessage="No confirmed appointments yet."
                     />
                   </div>
@@ -260,16 +344,21 @@ export default function ReceptionistDashboard() {
             </div>
           )}
 
-          {activeTab === "records" && (
+          {(activeTab === "upcoming-records" || activeTab === "past-records") && (
             <div className="records-panel">
-              <h2>Appointment Records</h2>
+              <h2>{isPastRecords ? "Past Appointments" : "Today & Upcoming Appointments"}</h2>
+              <p className="records-subtitle">
+                {isPastRecords
+                  ? `Appointments before today, most recent first (${periodAppointments.length}).`
+                  : `Appointments from today onwards, soonest first (${periodAppointments.length}).`}
+              </p>
 
               <div className="records-filters">
                 <label className="records-filter">
                   Filter by doctor
                   <select value={doctorFilter} onChange={(e) => setDoctorFilter(e.target.value)}>
                     <option value="all">All Doctors</option>
-                    {groupByDoctor(appointments).map((group) => (
+                    {groupByDoctor(periodAppointments).map((group) => (
                       <option key={group.doctorId} value={group.doctorName}>
                         Dr. {group.doctorName}
                       </option>
@@ -286,6 +375,17 @@ export default function ReceptionistDashboard() {
                     onChange={(e) => setNameSearch(e.target.value)}
                   />
                 </label>
+
+                <label className="records-filter">
+                  Filter by date
+                  <input
+                    type="date"
+                    value={dateFilter}
+                    min={isPastRecords ? undefined : todayKey}
+                    max={isPastRecords ? previousDateKey(todayKey) : undefined}
+                    onChange={(e) => setDateFilter(e.target.value)}
+                  />
+                </label>
               </div>
 
               {appointmentsLoading && <p>Loading…</p>}
@@ -299,7 +399,18 @@ export default function ReceptionistDashboard() {
                         Dr. {group.doctorName}
                         <span className="appointment-group__count">{group.appointments.length}</span>
                       </h3>
-                      <AppointmentTable appointments={group.appointments} />
+                      {(isPastRecords
+                        ? groupAppointmentsByDate(group.appointments).reverse()
+                        : groupAppointmentsByDate(group.appointments)
+                      ).map((dateGroup) => (
+                        <div key={dateGroup.date} className="records-date-group">
+                          <h4 className="appointment-date-group__title">
+                            {formatDateLabel(dateGroup.date)}
+                            {dateGroup.date === todayKey && <span className="records-today-tag">Today</span>}
+                          </h4>
+                          <AppointmentTable appointments={dateGroup.appointments} hideDate />
+                        </div>
+                      ))}
                     </div>
                   ))}
                 </div>
@@ -307,35 +418,45 @@ export default function ReceptionistDashboard() {
             </div>
           )}
 
+          {activeTab === "messages" && <MessagesPanel onRead={refreshUnreadMessages} />}
+
+          {activeTab === "feedback" && <FeedbackPanel readOnly />}
+
           {activeTab === "theme" && <ThemeToggle />}
         </div>
 
-        <nav className="dashboard__tabs" aria-label="Receptionist dashboard navigation">
-          <div className="dashboard__profile-summary">
-            {avatarPreview ? (
-              <img src={avatarPreview} alt="Profile" className="dashboard__profile-summary-img" />
-            ) : (
-              <div className="dashboard__profile-summary-placeholder" aria-hidden="true">
-                {user.name?.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <span className="dashboard__profile-summary-name">{user.name}</span>
-          </div>
-
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              className={activeTab === tab.key ? "dashboard__tab dashboard__tab--active" : "dashboard__tab"}
-              onClick={() => handleTabClick(tab.key)}
-            >
-              {tab.label}
-              {tab.key === "appointments" && pendingCount > 0 && (
-                <span className="dashboard__tab-badge">{pendingCount}</span>
+        {tabsOpen && (
+          <nav className="dashboard__tabs" aria-label="Receptionist dashboard navigation">
+            <div className="dashboard__profile-summary">
+              {avatarPreview ? (
+                <img src={avatarPreview} alt="Profile" className="dashboard__profile-summary-img" />
+              ) : (
+                <div className="dashboard__profile-summary-placeholder" aria-hidden="true">
+                  {user.name?.charAt(0).toUpperCase()}
+                </div>
               )}
-            </button>
-          ))}
-        </nav>
+              <span className="dashboard__profile-summary-name">{user.name}</span>
+              <span className="dashboard__profile-summary-username">@{user.username}</span>
+            </div>
+
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                className={activeTab === tab.key ? "dashboard__tab dashboard__tab--active" : "dashboard__tab"}
+                onClick={() => handleTabClick(tab.key)}
+              >
+                {tab.label}
+                {tab.key === "appointments" && pendingCount > 0 && (
+                  <span className="dashboard__tab-badge">{pendingCount}</span>
+                )}
+                {tab.key === "messages" && unreadMessages > 0 && (
+                  <span className="dashboard__tab-badge">{unreadMessages}</span>
+                )}
+              </button>
+            ))}
+          </nav>
+        )}
       </div>
     </section>
   );

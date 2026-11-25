@@ -33,3 +33,44 @@ export function generateTimeSlots(startTime, endTime) {
 
   return slots;
 }
+
+function toDateInputValue(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+export function weekdayOf(dateValue) {
+  const d = typeof dateValue === "string" ? new Date(`${dateValue}T00:00:00Z`) : new Date(dateValue);
+  return d.toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" });
+}
+
+export function formatDateLabel(dateValue) {
+  if (!dateValue) return "Date TBD";
+  const d = typeof dateValue === "string" ? new Date(`${dateValue}T00:00:00Z`) : new Date(dateValue);
+  if (Number.isNaN(d.getTime())) return "Date TBD";
+  return d.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+// The next `count` calendar dates (YYYY-MM-DD) that fall on one of the doctor's available weekdays.
+export function getUpcomingDates(availableDays, count = 10, horizonDays = 90) {
+  const results = [];
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+
+  for (let i = 0; i < horizonDays && results.length < count; i++) {
+    const d = new Date(today);
+    d.setUTCDate(d.getUTCDate() + i);
+    const value = toDateInputValue(d);
+    const weekday = weekdayOf(value);
+    if (availableDays.includes(weekday)) {
+      results.push({ value, weekday, label: formatDateLabel(value) });
+    }
+  }
+
+  return results;
+}

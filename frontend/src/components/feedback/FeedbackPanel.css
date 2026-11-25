@@ -1,0 +1,190 @@
+.feedback-panel {
+  width: 100%;
+  max-width: 640px;
+  text-align: left;
+}
+
+.feedback-panel__subtitle {
+  color: var(--text);
+  font-size: 13.5px;
+  margin: 2px 0 20px;
+}
+
+.feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 24px;
+}
+
+.feedback-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text-h);
+}
+
+.feedback-form textarea {
+  font: inherit;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  resize: vertical;
+}
+
+.feedback-form__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.feedback-form__row button {
+  font: inherit;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--accent);
+  color: var(--bg);
+  cursor: pointer;
+}
+
+.feedback-form__row button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.feedback-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.feedback-stars__star {
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  color: var(--border);
+}
+
+.feedback-stars--readonly .feedback-stars__star {
+  cursor: default;
+  font-size: 14px;
+}
+
+.feedback-stars__star--filled {
+  color: #f59e0b;
+}
+
+.feedback-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.feedback-item {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.feedback-item__avatar {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+}
+
+.feedback-item__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.feedback-item__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.feedback-item__header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.feedback-item__name {
+  font-weight: 500;
+  color: var(--text-h);
+  font-size: 14px;
+}
+
+.feedback-item__role {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.feedback-item__role--admin {
+  background: rgba(185, 28, 28, 0.12);
+  color: #b91c1c;
+}
+
+.feedback-item__role--doctor {
+  background: rgba(21, 128, 61, 0.12);
+  color: #15803d;
+}
+
+.feedback-item__role--receptionist {
+  background: rgba(29, 78, 216, 0.12);
+  color: #1d4ed8;
+}
+
+.feedback-item__role--nurse {
+  background: rgba(217, 119, 6, 0.12);
+  color: #b45309;
+}
+
+.feedback-item__role--patient {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.feedback-item__time {
+  font-size: 12px;
+  color: var(--text);
+  margin-left: auto;
+}
+
+.feedback-item__message {
+  font-size: 14px;
+  color: var(--text-h);
+  white-space: pre-wrap;
+  word-break: break-word;
+}

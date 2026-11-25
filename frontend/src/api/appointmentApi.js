@@ -29,3 +29,8 @@ export async function confirmAppointment(id) {
   const { data } = await axiosClient.patch(`/appointments/${id}/confirm`);
   return data.appointment;
 }
+
+export async function cancelAppointment(id) {
+  const { data } = await axiosClient.patch(`/appointments/${id}/cancel`);
+  return data.appointment;
+}
