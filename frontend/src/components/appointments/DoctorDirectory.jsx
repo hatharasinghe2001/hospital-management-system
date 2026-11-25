@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 import { fetchDoctors } from "../../api/doctorApi";
 import { createAppointment } from "../../api/appointmentApi";
 import { fetchHospitalCharge } from "../../api/settingsApi";
@@ -24,7 +25,10 @@ function todayInputValue() {
   return `${d.getFullYear()}-${month}-${day}`;
 }
 
+const EMPTY_BOOKING = { date: "", time: "", reason: "", patientName: "", patientAge: "", patientAddress: "" };
+
 export default function DoctorDirectory({ onBooked }) {
+  const { user } = useAuth();
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -33,7 +37,7 @@ export default function DoctorDirectory({ onBooked }) {
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [view, setView] = useState("list"); // list | detail | book
 
-  const [bookingForm, setBookingForm] = useState({ date: "", time: "", reason: "" });
+  const [bookingForm, setBookingForm] = useState(EMPTY_BOOKING);
   const [bookingStatus, setBookingStatus] = useState({ error: "", success: "" });
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
 
@@ -58,7 +62,14 @@ export default function DoctorDirectory({ onBooked }) {
 
   function openBooking() {
     const upcoming = getUpcomingDates(selectedDoctor.availableDays, 1);
-    setBookingForm({ date: upcoming[0]?.value || "", time: "", reason: "" });
+    // Keep patient details typed for a previous booking in this session; default the name to the account name.
+    setBookingForm((prev) => ({
+      ...EMPTY_BOOKING,
+      patientName: prev.patientName || user?.name || "",
+      patientAge: prev.patientAge,
+      patientAddress: prev.patientAddress,
+      date: upcoming[0]?.value || "",
+    }));
     setView("book");
   }
 
@@ -87,6 +98,9 @@ export default function DoctorDirectory({ onBooked }) {
         date: bookingForm.date,
         time: bookingForm.time,
         reason: bookingForm.reason,
+        patientName: bookingForm.patientName.trim(),
+        patientAge: Number(bookingForm.patientAge),
+        patientAddress: bookingForm.patientAddress.trim(),
       });
       setBookingStatus({
         error: "",
@@ -198,6 +212,52 @@ export default function DoctorDirectory({ onBooked }) {
             </p>
 
             <ChargeBreakdown doctorFee={selectedDoctor.consultationFee} hospitalCharge={hospitalCharge} />
+
+            <fieldset className="booking-patient">
+              <legend>Patient details</legend>
+
+              <label>
+                Full name
+                <input
+                  type="text"
+                  name="patientName"
+                  value={bookingForm.patientName}
+                  onChange={handleBookingFieldChange}
+                  maxLength={100}
+                  autoComplete="name"
+                  required
+                />
+              </label>
+
+              <label>
+                Age
+                <input
+                  type="number"
+                  name="patientAge"
+                  min="0"
+                  max="150"
+                  step="1"
+                  inputMode="numeric"
+                  value={bookingForm.patientAge}
+                  onChange={handleBookingFieldChange}
+                  required
+                />
+              </label>
+
+              <label>
+                Address
+                <textarea
+                  name="patientAddress"
+                  rows={2}
+                  value={bookingForm.patientAddress}
+                  onChange={handleBookingFieldChange}
+                  maxLength={300}
+                  autoComplete="street-address"
+                  placeholder="House no., street, city"
+                  required
+                />
+              </label>
+            </fieldset>
 
             <label>
               Date

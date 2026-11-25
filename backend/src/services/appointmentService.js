@@ -39,7 +39,7 @@ function formatDateLabel(date) {
     });
 }
 
-async function createAppointment(patientId, { doctorId, date, time, reason }) {
+async function createAppointment(patientId, { doctorId, date, time, reason, patientName, patientAge, patientAddress }) {
     if (!doctorId || !date || !time) {
         throw new AppError("Doctor, date and time are required", 400);
     }
@@ -80,6 +80,9 @@ async function createAppointment(patientId, { doctorId, date, time, reason }) {
         day,
         time,
         reason: reason || "",
+        patientName,
+        patientAge,
+        patientAddress,
         fee: profile.consultationFee,
         hospitalCharge,
         appointmentNumber: existingCount + 1,
